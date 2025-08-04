@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { aiService, type ConversationSuggestion } from '../services/aiService';
 import { 
   MessageCircle, 
   BookOpen, 
@@ -10,19 +9,11 @@ import {
   Clock,
   Star,
   Users,
-  ArrowRight,
-  Sparkles,
-  RefreshCw,
-  Lightbulb,
-  AlertCircle
+  ArrowRight
 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { userProfile } = useAuth();
-  const [aiRecommendations, setAiRecommendations] = useState<ConversationSuggestion[]>([]);
-  const [todaysPrompt, setTodaysPrompt] = useState<ConversationSuggestion | null>(null);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
-  const [recommendationError, setRecommendationError] = useState<string | null>(null);
 
   const quickActions = [
     {
@@ -51,124 +42,54 @@ const Dashboard: React.FC = () => {
   const stats = [
     {
       name: 'Conversations Started',
-      value: '18',
-      icon: MessageCircle,
-      change: '+3 this week',
-      changeType: 'positive',
-    },
-    {
-      name: 'Terms Learned',
-      value: '32',
-      icon: BookOpen,
-      change: '+7 this week',
-      changeType: 'positive',
-    },
-    {
-      name: 'Journal Entries',
       value: '12',
-      icon: PenTool,
+      icon: MessageCircle,
       change: '+2 this week',
       changeType: 'positive',
     },
     {
-      name: 'Family Members',
-      value: '4',
-      icon: Users,
-      change: 'All Active',
+      name: 'Terms Learned',
+      value: '25',
+      icon: BookOpen,
+      change: '+5 this week',
       changeType: 'positive',
     },
+    {
+      name: 'Journal Entries',
+      value: '8',
+      icon: PenTool,
+      change: '+1 this week',
+      changeType: 'positive',
+    },
+    {
+      name: 'Family Members',
+      value: '3',
+      icon: Users,
+      change: 'Active',
+      changeType: 'neutral',
+    },
   ];
-
-  // Load AI-powered recommendations on component mount
-  useEffect(() => {
-    if (userProfile) {
-      loadPersonalizedRecommendations();
-    }
-  }, [userProfile]);
-
-  const loadPersonalizedRecommendations = async () => {
-    if (!userProfile) return;
-    
-    setLoadingRecommendations(true);
-    setRecommendationError(null);
-    
-    try {
-      // Get user's age (default to 12 if child, 35 if parent)
-      const userAge = userProfile.role === 'child' ? 12 : 35;
-      
-      // Mock interests based on role (in real app, these would come from user profile)
-      const interests = userProfile.role === 'child' 
-        ? ['gaming', 'videos', 'social media']
-        : ['education', 'technology', 'family'];
-      
-      // Mock previous topics (in real app, these would come from conversation history)
-      const previousTopics = ['What is AI', 'AI in social media', 'Voice assistants'];
-      
-      const suggestions = await aiService.generateConversationSuggestions(
-        userAge,
-        interests,
-        previousTopics,
-        userProfile.id
-      );
-      
-      setAiRecommendations(suggestions);
-      
-      // Set today's prompt as the first recommendation
-      if (suggestions.length > 0) {
-        setTodaysPrompt(suggestions[0]);
-      }
-    } catch (error: any) {
-      console.error('Error loading AI recommendations:', error);
-      setRecommendationError(
-        error.message.includes('Rate limit') 
-          ? 'Too many requests. Please try again in a few minutes.'
-          : 'Failed to load personalized recommendations. Using default suggestions.'
-      );
-      
-      // Fallback to static content
-      setTodaysPrompt({
-        question: "How does AI help doctors diagnose diseases?",
-        explanation: "Medical AI can analyze symptoms, test results, and medical images to help doctors spot patterns and make more accurate diagnoses.",
-        difficulty: 'intermediate' as const,
-        ageAppropriate: true,
-        estimatedTime: 20
-      });
-    } finally {
-      setLoadingRecommendations(false);
-    }
-  };
-
-  const refreshRecommendations = () => {
-    loadPersonalizedRecommendations();
-  };
 
   const recentPrompts = [
     {
       id: '1',
-      title: 'Language Translation and AI',
-      category: 'Technology',
+      title: 'What is Machine Learning?',
+      category: 'Basics',
       difficulty: 'Beginner',
-      completedAt: '1 day ago',
+      completedAt: '2 days ago',
     },
     {
       id: '2',
-      title: 'Chatbots and Conversational AI',
-      category: 'Tools',
-      difficulty: 'Beginner',
-      completedAt: '3 days ago',
+      title: 'AI in Social Media',
+      category: 'Ethics',
+      difficulty: 'Intermediate',
+      completedAt: '1 week ago',
     },
     {
       id: '3',
-      title: 'The Future of Work with AI',
-      category: 'Society',
-      difficulty: 'Advanced',
-      completedAt: '5 days ago',
-    },
-    {
-      id: '4',
-      title: 'Recommendation Systems',
-      category: 'Algorithms',
-      difficulty: 'Intermediate',
+      title: 'How Do Voice Assistants Work?',
+      category: 'Tools',
+      difficulty: 'Beginner',
       completedAt: '1 week ago',
     },
   ];
@@ -189,11 +110,11 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Star className="h-5 w-5 text-yellow-300" />
-            <span className="text-sm">Level: Intermediate</span>
+            <span className="text-sm">Level: Beginner</span>
           </div>
           <div className="flex items-center space-x-2">
             <TrendingUp className="h-5 w-5 text-green-300" />
-            <span className="text-sm">Streak: 12 days</span>
+            <span className="text-sm">Streak: 5 days</span>
           </div>
         </div>
       </div>
@@ -299,177 +220,59 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* AI-Powered Today's Prompt */}
+        {/* Today's Prompt */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-              <Sparkles className="h-5 w-5 mr-2 text-purple-600" />
-              AI-Powered Suggestion
-            </h2>
-            <button
-              onClick={refreshRecommendations}
-              disabled={loadingRecommendations}
-              className="p-2 text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
-              title="Get new suggestions"
-            >
-              <RefreshCw className={`h-4 w-4 ${loadingRecommendations ? 'animate-spin' : ''}`} />
-            </button>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Prompt</h2>
+          <div className="card bg-gradient-to-br from-secondary-50 to-secondary-100 border-secondary-200">
+            <div className="flex items-start space-x-4">
+              <div className="p-3 bg-secondary-500 text-white rounded-lg">
+                <MessageCircle className="h-6 w-6" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  How does AI recognize faces in photos?
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Explore facial recognition technology together and discuss privacy implications.
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                      Computer Vision
+                    </span>
+                    <span className="text-xs text-gray-500">Intermediate</span>
+                  </div>
+                  <Link 
+                    to="/conversations" 
+                    className="btn-primary text-sm px-4 py-2"
+                  >
+                    Start Discussion
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          {loadingRecommendations ? (
-            <div className="card bg-gradient-to-br from-secondary-50 to-secondary-100 border-secondary-200">
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mr-3"></div>
-                <span className="text-gray-600">Generating personalized suggestions...</span>
-              </div>
-            </div>
-          ) : recommendationError ? (
-            <div className="card bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
-              <div className="flex items-start space-x-4">
-                <div className="p-3 bg-yellow-500 text-white rounded-lg">
-                  <AlertCircle className="h-6 w-6" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Using Backup Suggestion
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {recommendationError}
-                  </p>
-                  {todaysPrompt && (
-                    <>
-                      <h4 className="font-medium text-gray-900 mb-2">{todaysPrompt.question}</h4>
-                      <p className="text-sm text-gray-600 mb-4">{todaysPrompt.explanation}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                            {todaysPrompt.difficulty}
-                          </span>
-                          <span className="text-xs text-gray-500">{todaysPrompt.estimatedTime} min</span>
-                        </div>
-                        <Link 
-                          to="/conversations" 
-                          className="btn-primary text-sm px-4 py-2"
-                        >
-                          Start Discussion
-                        </Link>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : todaysPrompt ? (
-            <div className="card bg-gradient-to-br from-secondary-50 to-secondary-100 border-secondary-200">
-              <div className="flex items-start space-x-4">
-                <div className="p-3 bg-gradient-to-br from-secondary-500 to-secondary-600 text-white rounded-lg">
-                  <Lightbulb className="h-6 w-6" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h3 className="font-semibold text-gray-900">
-                      Perfect for You
-                    </h3>
-                    <Sparkles className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <h4 className="font-medium text-gray-900 mb-2">{todaysPrompt.question}</h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {todaysPrompt.explanation}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        todaysPrompt.difficulty === 'beginner' ? 'bg-green-100 text-green-700' :
-                        todaysPrompt.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {todaysPrompt.difficulty}
-                      </span>
-                      <span className="text-xs text-gray-500">{todaysPrompt.estimatedTime} min chat</span>
-                    </div>
-                    <Link 
-                      to="/conversations" 
-                      className="btn-primary text-sm px-4 py-2"
-                    >
-                      Start Discussion
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="card bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200">
-              <div className="flex items-center justify-center py-8">
-                <MessageCircle className="h-8 w-8 text-gray-400 mr-3" />
-                <span className="text-gray-600">No suggestions available right now</span>
-              </div>
-            </div>
-          )}
-
-          {/* AI Recommendations */}
-          {aiRecommendations.length > 1 && (
-            <div className="mt-6">
-              <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
-                More AI Suggestions
-              </h3>
-              <div className="space-y-3">
-                {aiRecommendations.slice(1, 3).map((suggestion, index) => (
-                  <div key={index} className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                    <h4 className="font-medium text-gray-900 text-sm mb-1">
-                      {suggestion.question}
-                    </h4>
-                    <p className="text-xs text-gray-600 mb-2">
-                      {suggestion.explanation.length > 100 
-                        ? `${suggestion.explanation.substring(0, 100)}...` 
-                        : suggestion.explanation
-                      }
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        suggestion.difficulty === 'beginner' ? 'bg-green-100 text-green-700' :
-                        suggestion.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {suggestion.difficulty}
-                      </span>
-                      <span className="text-xs text-gray-500">{suggestion.estimatedTime} min</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Family Activity */}
           <div className="mt-6">
             <h3 className="text-md font-semibold text-gray-900 mb-3">Family Activity</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  E
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                  S
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Emma shared "AI Translation Magic" entry</p>
-                  <p className="text-xs text-gray-500">3 hours ago</p>
+                  <p className="text-sm font-medium text-gray-900">Sarah added a journal entry</p>
+                  <p className="text-xs text-gray-500">2 hours ago</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  A
+                  M
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Alex completed "Future of Work" conversation</p>
+                  <p className="text-sm font-medium text-gray-900">Mom completed "AI Ethics" prompt</p>
                   <p className="text-xs text-gray-500">1 day ago</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  D
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Dad started "Chatbot Analysis" discussion</p>
-                  <p className="text-xs text-gray-500">2 days ago</p>
                 </div>
               </div>
             </div>
