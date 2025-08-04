@@ -5,8 +5,6 @@ import {
   MessageCircle, 
   BookOpen, 
   PenTool, 
-  TrendingUp, 
-  Clock,
   Star,
   Users,
   ArrowRight
@@ -39,60 +37,39 @@ const Dashboard: React.FC = () => {
     },
   ];
 
+  // Real stats would come from Firebase - for now show empty state
   const stats = [
     {
       name: 'Conversations Started',
-      value: '12',
+      value: '0',
       icon: MessageCircle,
-      change: '+2 this week',
-      changeType: 'positive',
+      change: 'Get started',
+      changeType: 'neutral',
     },
     {
       name: 'Terms Learned',
-      value: '25',
+      value: '0',
       icon: BookOpen,
-      change: '+5 this week',
-      changeType: 'positive',
+      change: 'Explore glossary',
+      changeType: 'neutral',
     },
     {
       name: 'Journal Entries',
-      value: '8',
+      value: '0',
       icon: PenTool,
-      change: '+1 this week',
-      changeType: 'positive',
+      change: 'Write your first',
+      changeType: 'neutral',
     },
     {
       name: 'Family Members',
-      value: '3',
+      value: '1',
       icon: Users,
-      change: 'Active',
+      change: 'Invite family',
       changeType: 'neutral',
     },
   ];
 
-  const recentPrompts = [
-    {
-      id: '1',
-      title: 'What is Machine Learning?',
-      category: 'Basics',
-      difficulty: 'Beginner',
-      completedAt: '2 days ago',
-    },
-    {
-      id: '2',
-      title: 'AI in Social Media',
-      category: 'Ethics',
-      difficulty: 'Intermediate',
-      completedAt: '1 week ago',
-    },
-    {
-      id: '3',
-      title: 'How Do Voice Assistants Work?',
-      category: 'Tools',
-      difficulty: 'Beginner',
-      completedAt: '1 week ago',
-    },
-  ];
+  // No dummy data - will load from real user activity
 
   return (
     <div className="space-y-8">
@@ -110,11 +87,7 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Star className="h-5 w-5 text-yellow-300" />
-            <span className="text-sm">Level: Beginner</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <TrendingUp className="h-5 w-5 text-green-300" />
-            <span className="text-sm">Streak: 5 days</span>
+            <span className="text-sm">Just getting started</span>
           </div>
         </div>
       </div>
@@ -198,24 +171,18 @@ const Dashboard: React.FC = () => {
             </Link>
           </div>
           <div className="card">
-            <div className="space-y-4">
-              {recentPrompts.map((prompt) => (
-                <div key={prompt.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{prompt.title}</h3>
-                    <div className="flex items-center space-x-4 mt-1">
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                        {prompt.category}
-                      </span>
-                      <span className="text-xs text-gray-500">{prompt.difficulty}</span>
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500 flex items-center">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {prompt.completedAt}
-                  </div>
-                </div>
-              ))}
+            <div className="text-center py-8">
+              <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No conversations yet</h3>
+              <p className="text-gray-600 mb-4">
+                Start your first AI conversation to begin learning together.
+              </p>
+              <Link 
+                to="/conversations" 
+                className="btn-primary"
+              >
+                Browse Conversation Prompts
+              </Link>
             </div>
           </div>
         </div>
@@ -256,27 +223,33 @@ const Dashboard: React.FC = () => {
           {/* Family Activity */}
           <div className="mt-6">
             <h3 className="text-md font-semibold text-gray-900 mb-3">Family Activity</h3>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  S
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Sarah added a journal entry</p>
-                  <p className="text-xs text-gray-500">2 hours ago</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  M
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Mom completed "AI Ethics" prompt</p>
-                  <p className="text-xs text-gray-500">1 day ago</p>
-                </div>
-              </div>
+            <div className="text-center py-6">
+              <Users className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+              <p className="text-sm text-gray-600">
+                No family activity yet. Invite family members to start sharing your AI learning journey.
+              </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Getting Started Tips */}
+      <div className="bg-blue-50 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+          <Star className="h-5 w-5 mr-2" />
+          Getting Started
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+          <ul className="space-y-2">
+            <li>• Use today's conversation starter during car rides or meals</li>
+            <li>• Write in the journal after interesting conversations</li>
+            <li>• Look up AI terms when your kids ask "what's that?"</li>
+          </ul>
+          <ul className="space-y-2">
+            <li>• Don't worry about being an expert - explore together</li>
+            <li>• Focus on curiosity, not perfect answers</li>
+            <li>• Celebrate questions and discoveries</li>
+          </ul>
         </div>
       </div>
     </div>

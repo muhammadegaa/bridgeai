@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   MessageCircle, 
@@ -31,111 +31,34 @@ const ConversationPrompts: React.FC = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mock data - in a real app, this would come from Firebase
-  const prompts: Prompt[] = [
-    {
-      id: '1',
-      title: 'What is Artificial Intelligence?',
-      description: 'Start with the basics - explore what AI really means in simple terms.',
-      category: 'daily',
-      ageGroup: 'all',
-      difficulty: 'beginner',
-      tags: ['basics', 'introduction'],
-      estimatedTime: '15 minutes',
-      parentGuidance: 'Begin by asking what your child already knows about AI. Use everyday examples like voice assistants or recommendation systems.',
-      childQuestion: 'Can you think of any AI that you use every day?',
-      followUpQuestions: [
-        'How do you think AI learns new things?',
-        'What makes AI different from regular computer programs?',
-        'What questions do you have about AI?'
-      ]
-    },
-    {
-      id: '2',
-      title: 'AI in Social Media',
-      description: 'Discuss how AI shapes what we see online and its impact on our daily lives.',
-      category: 'weekly',
-      ageGroup: '14-17',
-      difficulty: 'intermediate',
-      tags: ['social media', 'algorithms', 'ethics'],
-      estimatedTime: '25 minutes',
-      parentGuidance: 'Focus on algorithmic feeds and personalization. Discuss both benefits and potential concerns.',
-      childQuestion: 'Have you noticed that your social media shows you things you\'re interested in?',
-      followUpQuestions: [
-        'How do you think these platforms know what you like?',
-        'Are there any downsides to AI choosing what we see?',
-        'How can we use social media more mindfully?'
-      ]
-    },
-    {
-      id: '3',
-      title: 'AI and Privacy',
-      description: 'Explore how AI uses our data and what that means for privacy.',
-      category: 'weekly',
-      ageGroup: 'all',
-      difficulty: 'intermediate',
-      tags: ['privacy', 'data', 'ethics'],
-      estimatedTime: '20 minutes',
-      parentGuidance: 'Help your child understand data collection without creating fear. Focus on making informed choices.',
-      childQuestion: 'What information do you think apps collect about us?',
-      followUpQuestions: [
-        'Why might companies want our data?',
-        'How can we protect our privacy online?',
-        'What are the benefits and risks of sharing data?'
-      ]
-    },
-    {
-      id: '4',
-      title: 'How Voice Assistants Work',
-      description: 'Demystify how Siri, Alexa, and Google Assistant understand and respond to us.',
-      category: 'daily',
-      ageGroup: '10-13',
-      difficulty: 'beginner',
-      tags: ['voice', 'natural language', 'technology'],
-      estimatedTime: '15 minutes',
-      parentGuidance: 'Use your family\'s voice assistant as a hands-on example. Focus on the "magic" of understanding speech.',
-      childQuestion: 'How do you think voice assistants understand what we\'re saying?',
-      followUpQuestions: [
-        'What happens when the assistant doesn\'t understand?',
-        'How do they know the difference between different voices?',
-        'What other devices might use similar technology?'
-      ]
-    },
-    {
-      id: '5',
-      title: 'AI in Creative Fields',
-      description: 'Explore how AI is changing art, music, and creative expression.',
-      category: 'special',
-      ageGroup: 'all',
-      difficulty: 'intermediate',
-      tags: ['creativity', 'art', 'music'],
-      estimatedTime: '30 minutes',
-      parentGuidance: 'Show examples of AI-generated art or music. Discuss creativity, originality, and human expression.',
-      childQuestion: 'Can machines be creative? What makes something creative?',
-      followUpQuestions: [
-        'How is AI creativity different from human creativity?',
-        'Should AI art be considered "real" art?',
-        'How might AI change creative careers in the future?'
-      ]
-    },
-    {
-      id: '6',
-      title: 'Bias in AI Systems',
-      description: 'Understand how AI can have biases and why fairness matters.',
-      category: 'weekly',
-      ageGroup: '14-17',
-      difficulty: 'advanced',
-      tags: ['bias', 'fairness', 'ethics'],
-      estimatedTime: '25 minutes',
-      parentGuidance: 'Use age-appropriate examples of bias. Focus on the importance of diverse perspectives in technology.',
-      childQuestion: 'Do you think computers can be unfair? How?',
-      followUpQuestions: [
-        'Where might bias in AI come from?',
-        'How can we make AI systems more fair?',
-        'Why is it important to have diverse teams building AI?'
-      ]
-    }
-  ];
+  // Real prompts will be generated by AI based on user preferences
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Load AI-generated prompts based on user profile
+    const loadPrompts = async () => {
+      if (!userProfile) return;
+      
+      try {
+        setLoading(true);
+        // TODO: Generate prompts with AI service based on:
+        // - User's role (parent/child)
+        // - Child's age if parent
+        // - Previous conversation topics
+        // - User interests/preferences
+        
+        // For now, show empty state to encourage real implementation
+        setPrompts([]);
+      } catch (error) {
+        console.error('Error loading prompts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPrompts();
+  }, [userProfile]);
 
   const categories = [
     { id: 'all', name: 'All Prompts', icon: MessageCircle },
@@ -244,9 +167,17 @@ const ConversationPrompts: React.FC = () => {
         </select>
       </div>
 
-      {/* Prompts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPrompts.map((prompt) => {
+      {/* Loading State */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading conversation prompts...</p>
+        </div>
+      ) : (
+        <>
+          {/* Prompts Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPrompts.map((prompt) => {
           const CategoryIcon = getCategoryIcon(prompt.category);
           return (
             <div key={prompt.id} className="card hover:shadow-md transition-shadow duration-200 group">
@@ -298,17 +229,22 @@ const ConversationPrompts: React.FC = () => {
               </button>
             </div>
           );
-        })}
-      </div>
-
-      {filteredPrompts.length === 0 && (
-        <div className="text-center py-12">
-          <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No prompts found</h3>
-          <p className="text-gray-600">
-            Try adjusting your filters or search terms to find conversation prompts.
-          </p>
+          })}
         </div>
+
+        {filteredPrompts.length === 0 && (
+          <div className="text-center py-12">
+            <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No conversation prompts available</h3>
+            <p className="text-gray-600 mb-4">
+              Conversation prompts will be generated based on your family's learning preferences and interests.
+            </p>
+            <p className="text-sm text-gray-500">
+              Complete your profile setup to get personalized AI conversation starters.
+            </p>
+          </div>
+        )}
+        </>
       )}
 
       {/* Tips Section */}

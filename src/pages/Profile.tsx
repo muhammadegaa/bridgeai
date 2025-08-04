@@ -26,31 +26,28 @@ const Profile: React.FC = () => {
     allowFamilyView: true,
   });
 
-  // Mock stats - in a real app, these would come from Firebase
+  // Real stats will come from Firebase - show actual user data
   const stats = {
-    conversationsStarted: 12,
-    termsLearned: 25,
-    journalEntries: 8,
-    daysActive: 15,
-    streak: 5,
-    level: 'Beginner',
+    conversationsStarted: 0,
+    termsLearned: 0,
+    journalEntries: 0,
+    daysActive: 0,
+    streak: 0,
+    level: 'Getting Started',
   };
 
+  // Real achievements will be tracked based on actual user activity
   const achievements = [
-    { id: 1, title: 'First Conversation', description: 'Started your first AI discussion', earned: true, date: '2024-01-15' },
-    { id: 2, title: 'Curious Learner', description: 'Looked up 10 AI terms', earned: true, date: '2024-01-16' },
-    { id: 3, title: 'Journal Writer', description: 'Wrote 5 journal entries', earned: true, date: '2024-01-18' },
-    { id: 4, title: 'Streak Master', description: 'Maintained 7-day learning streak', earned: false, date: null },
-    { id: 5, title: 'Family Connector', description: 'Shared 10 entries with family', earned: false, date: null },
-    { id: 6, title: 'Deep Thinker', description: 'Completed 5 advanced conversations', earned: false, date: null },
+    { id: 1, title: 'First Conversation', description: 'Start your first AI discussion', earned: false, date: null },
+    { id: 2, title: 'Curious Learner', description: 'Look up 10 AI terms', earned: false, date: null },
+    { id: 3, title: 'Journal Writer', description: 'Write 5 journal entries', earned: false, date: null },
+    { id: 4, title: 'Streak Master', description: 'Maintain 7-day learning streak', earned: false, date: null },
+    { id: 5, title: 'Family Connector', description: 'Share 10 entries with family', earned: false, date: null },
+    { id: 6, title: 'Deep Thinker', description: 'Complete 5 advanced conversations', earned: false, date: null },
   ];
 
-  const recentActivity = [
-    { action: 'Completed conversation', item: 'AI and Privacy', date: '2 days ago' },
-    { action: 'Added journal entry', item: 'Privacy Discussion Insights', date: '2 days ago' },
-    { action: 'Looked up term', item: 'Machine Learning', date: '3 days ago' },
-    { action: 'Started conversation', item: 'What is AI?', date: '1 week ago' },
-  ];
+  // Real activity will be tracked from user actions
+  const recentActivity: any[] = [];
 
   const handleSaveProfile = () => {
     // In a real app, this would update Firebase
@@ -265,19 +262,29 @@ const Profile: React.FC = () => {
           {/* Recent Activity */}
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h2>
-            <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center space-x-3 py-2">
-                  <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">
-                      <span className="font-medium">{activity.action}</span>: {activity.item}
-                    </p>
-                    <p className="text-xs text-gray-500">{activity.date}</p>
+            {recentActivity.length > 0 ? (
+              <div className="space-y-4">
+                {recentActivity.map((activity, index) => (
+                  <div key={index} className="flex items-center space-x-3 py-2">
+                    <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-900">
+                        <span className="font-medium">{activity.action}</span>: {activity.item}
+                      </p>
+                      <p className="text-xs text-gray-500">{activity.date}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No activity yet</h3>
+                <p className="text-gray-600">
+                  Start exploring AI conversations and writing journal entries to see your activity here.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

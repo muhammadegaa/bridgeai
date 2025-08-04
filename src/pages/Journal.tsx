@@ -1,32 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-// import { journalService } from '../services/journalService';
-// import type { JournalEntry } from '../services/journalService';
+import { journalService, type JournalEntry } from '../services/journalService';
+import { userStatsService } from '../services/userStatsService';
 
-interface Comment {
-  id: string;
-  userId: string;
-  userName: string;
-  content: string;
-  createdAt: Date;
-}
-
-interface JournalEntry {
-  id: string;
-  userId: string;
-  userName: string;
-  userRole: 'parent' | 'child';
-  title: string;
-  content: string;
-  isShared: boolean;
-  tags: string[];
-  promptId?: string;
-  promptTitle?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  likes: string[];
-  comments: Comment[];
-}
 import { 
   Plus, 
   Search, 
@@ -64,104 +40,41 @@ const Journal: React.FC = () => {
     
     try {
       setLoading(true);
-      // For now, use mock data - will be replaced with real service calls
-      setJournalEntries([]);
+      let entries: JournalEntry[] = [];
+      
+      if (selectedFilter === 'mine') {
+        entries = await journalService.getEntries(userProfile.id, false);
+      } else if (selectedFilter === 'family') {
+        entries = await journalService.getEntries(userProfile.id, true);
+      } else {
+        // For 'all', get both shared entries and user's own entries
+        const [sharedEntries, userEntries] = await Promise.all([
+          journalService.getEntries(userProfile.id, true),
+          journalService.getEntries(userProfile.id, false)
+        ]);
+        
+        // Combine and deduplicate
+        const allEntries = [...sharedEntries, ...userEntries];
+        const uniqueEntries = allEntries.filter((entry, index, arr) => 
+          arr.findIndex(e => e.id === entry.id) === index
+        );
+        entries = uniqueEntries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
+      setJournalEntries(entries);
     } catch (error) {
       console.error('Error loading journal entries:', error);
+      setJournalEntries([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fallback mock data for demo purposes
-  const mockEntries: JournalEntry[] = [
-    {
-      id: '1',
-      userId: 'user1',
-      userName: 'Sarah (Mom)',
-      userRole: 'parent',
-      title: 'Our First AI Conversation',
-      content: 'Today we talked about what AI means. Emma was fascinated to learn that her favorite video app uses AI to recommend videos. She asked great questions about how computers can "learn" things. I think starting with examples she already uses was a great approach.',
-      isShared: true,
-      tags: ['first-time', 'basics', 'success'],
-      promptId: '1',
-      promptTitle: 'What is Artificial Intelligence?',
-      createdAt: new Date('2024-01-15'),
-      updatedAt: new Date('2024-01-15'),
-      likes: ['user2', 'user3'],
-      comments: [
-        {
-          id: 'c1',
-          userId: 'user2',
-          userName: 'Emma',
-          content: 'I loved learning about this! Can we talk about how AI makes art next?',
-          createdAt: new Date('2024-01-15')
-        }
-      ]
-    },
-    {
-      id: '2',
-      userId: 'user2',
-      userName: 'Emma',
-      userRole: 'child',
-      title: 'AI is Everywhere!',
-      content: 'I never realized how much AI is around us! Mom showed me that even my games use AI. The characters that fight against me are using AI to make decisions. It\'s like they\'re thinking, but not really thinking like humans do. That\'s so cool and weird at the same time.',
-      isShared: true,
-      tags: ['discovery', 'games', 'realization'],
-      createdAt: new Date('2024-01-16'),
-      updatedAt: new Date('2024-01-16'),
-      likes: ['user1'],
-      comments: []
-    },
-    {
-      id: '3',
-      userId: 'user1',
-      userName: 'Sarah (Mom)',
-      userRole: 'parent',
-      title: 'Privacy Discussion Insights',
-      content: 'We had a really good talk about AI and privacy today. Emma was initially worried that AI "knows everything" about her. I explained how she has control over what information she shares. We went through her phone settings together and she felt more empowered. Important to balance awareness with empowerment.',
-      isShared: false,
-      tags: ['privacy', 'empowerment', 'settings'],
-      promptId: '7',
-      promptTitle: 'AI and Privacy',
-      createdAt: new Date('2024-01-18'),
-      updatedAt: new Date('2024-01-18'),
-      likes: [],
-      comments: []
-    },
-    {
-      id: '4',
-      userId: 'user3',
-      userName: 'Dad',
-      userRole: 'parent',
-      title: 'Bias Discussion Success',
-      content: 'Had an amazing conversation with both kids about AI bias using the hiring example. They immediately understood how unfair it would be if AI made decisions based on incomplete information. Emma said "that\'s like judging a book by its cover!" Perfect analogy. They\'re both more aware now of questioning technology.',
-      isShared: true,
-      tags: ['bias', 'fairness', 'critical-thinking'],
-      promptId: '6',
-      promptTitle: 'Bias in AI Systems',
-      createdAt: new Date('2024-01-20'),
-      updatedAt: new Date('2024-01-20'),
-      likes: ['user1', 'user2'],
-      comments: [
-        {
-          id: 'c2',
-          userId: 'user1',
-          userName: 'Sarah (Mom)',
-          content: 'Great job! I love Emma\'s book analogy - she really gets it.',
-          createdAt: new Date('2024-01-20')
-        }
-      ]
-    }
-  ];
-
-  // Use mock data if no real entries exist (for demo purposes)
-  const displayEntries = journalEntries.length > 0 ? journalEntries : mockEntries;
+  const displayEntries = journalEntries;
   
   const filteredEntries = displayEntries.filter(entry => {
     const matchesFilter = 
       selectedFilter === 'all' || 
-      (selectedFilter === 'mine' && entry.userId === userProfile?.id) ||
+      (selectedFilter === 'mine' && entry.userId === (userProfile?.id || '')) ||
       (selectedFilter === 'family' && entry.isShared);
     
     const matchesSearch = searchTerm === '' ||
@@ -176,22 +89,30 @@ const Journal: React.FC = () => {
     if (!userProfile || !newEntry.title || !newEntry.content) return;
     
     try {
-      // For now, just close the modal - will be replaced with real service calls
-      setShowNewEntryModal(false);
-      setNewEntry({ title: '', content: '', isShared: true, tags: [] });
-      
-      // Show success message
-      console.log('Entry would be created:', {
+      const entryData = {
         userId: userProfile.id,
-        userName: userProfile.displayName,
-        userRole: userProfile.role,
+        userName: userProfile.displayName || 'User',
+        userRole: userProfile.role || 'parent',
         title: newEntry.title,
         content: newEntry.content,
         isShared: newEntry.isShared,
         tags: newEntry.tags
-      });
+      };
+      
+      await journalService.createEntry(entryData);
+      
+      // Update user stats
+      await userStatsService.updateStats(userProfile.id, 'journal', newEntry.title);
+      
+      // Close modal and reset form
+      setShowNewEntryModal(false);
+      setNewEntry({ title: '', content: '', isShared: true, tags: [] });
+      
+      // Reload entries
+      await loadEntries();
     } catch (error) {
       console.error('Error creating journal entry:', error);
+      alert('Failed to create journal entry. Please try again.');
     }
   };
 
@@ -312,12 +233,17 @@ const Journal: React.FC = () => {
                 </div>
               </div>
               
-              {entry.userId === userProfile?.id && (
+              {entry.userId === (userProfile?.id || '') && (
                 <div className="flex space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                    <Edit3 className="h-4 w-4" />
-                  </button>
-                  <button className="p-2 text-gray-400 hover:text-red-600 transition-colors">
+                  <button 
+                    onClick={() => {
+                      if (confirm('Are you sure you want to delete this entry?')) {
+                        if (entry.id) journalService.deleteEntry(entry.id);
+                        loadEntries();
+                      }
+                    }}
+                    className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -354,7 +280,15 @@ const Journal: React.FC = () => {
             {/* Entry Actions */}
             <div className="flex items-center justify-between pt-4 border-t border-gray-100">
               <div className="flex items-center space-x-4">
-                <button className="flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors">
+                <button 
+                  onClick={() => {
+                    if (userProfile && entry.id) {
+                      journalService.toggleLike(entry.id, userProfile.id);
+                      loadEntries(); // Refresh to show updated likes
+                    }
+                  }}
+                  className="flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors"
+                >
                   <Heart className={`h-5 w-5 ${entry.likes.includes(userProfile?.id || '') ? 'fill-current text-red-500' : ''}`} />
                   <span className="text-sm">{entry.likes.length}</span>
                 </button>
