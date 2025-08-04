@@ -8,17 +8,19 @@
       "destination": "/index.html"
     }
   ],
-  "env": {
-    "VITE_FIREBASE_API_KEY": "@vite_firebase_api_key",
-    "VITE_FIREBASE_AUTH_DOMAIN": "@vite_firebase_auth_domain",
-    "VITE_FIREBASE_PROJECT_ID": "@vite_firebase_project_id",
-    "VITE_FIREBASE_STORAGE_BUCKET": "@vite_firebase_storage_bucket",
-    "VITE_FIREBASE_MESSAGING_SENDER_ID": "@vite_firebase_messaging_sender_id",
-    "VITE_FIREBASE_APP_ID": "@vite_firebase_app_id",
-    "VITE_FIREBASE_MEASUREMENT_ID": "@vite_firebase_measurement_id",
-    "VITE_OPENROUTER_API_KEY": "@vite_openrouter_api_key",
-    "VITE_OPENROUTER_API_URL": "https://openrouter.ai/api/v1",
-    "VITE_APP_NAME": "BridgeAI",
-    "VITE_APP_VERSION": "1.0.0"
+  "build": {
+    "env": {
+      "VITE_FIREBASE_API_KEY": "AIzaSyAZb_abD8mcU7WcyiOpa_yJ6rUUleZ2z0Q",
+      "VITE_FIREBASE_AUTH_DOMAIN": "bridgeai-30ef5.firebaseapp.com",
+      "VITE_FIREBASE_PROJECT_ID": "bridgeai-30ef5",
+      "VITE_FIREBASE_STORAGE_BUCKET": "bridgeai-30ef5.firebasestorage.app",
+      "VITE_FIREBASE_MESSAGING_SENDER_ID": "126575336002",
+      "VITE_FIREBASE_APP_ID": "1:126575336002:web:6cc8681659aecd5d23ebdb",
+      "VITE_FIREBASE_MEASUREMENT_ID": "G-NKYWBPFQQ2",
+      "VITE_OPENROUTER_API_KEY": "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",
+      "VITE_OPENROUTER_API_URL": "https://openrouter.ai/api/v1",
+      "VITE_APP_NAME": "BridgeAI",
+      "VITE_APP_VERSION": "1.0.0"
+    }
   }
 }
