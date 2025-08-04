@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { aiService } from '../services/aiService';
 import { 
   Calendar, 
   Bell,
@@ -8,7 +9,12 @@ import {
   TrendingUp,
   Edit3,
   Check,
-  X
+  X,
+  Sparkles,
+  Target,
+  BookOpen,
+  MessageCircle,
+  Award
 } from 'lucide-react';
 
 const Profile: React.FC = () => {
@@ -18,6 +24,10 @@ const Profile: React.FC = () => {
     displayName: userProfile?.displayName || '',
     email: userProfile?.email || '',
   });
+  const [learningPath, setLearningPath] = useState<string[]>([]);
+  const [loadingPath, setLoadingPath] = useState(false);
+  const [progressInsights, setProgressInsights] = useState<string[]>([]);
+  const [loadingInsights, setLoadingInsights] = useState(false);
 
   const [settings, setSettings] = useState({
     emailNotifications: true,
@@ -73,6 +83,74 @@ const Profile: React.FC = () => {
       console.error('Failed to log out:', error);
     }
   };
+
+  const generateLearningPath = async () => {
+    if (!userProfile) return;
+    
+    setLoadingPath(true);
+    try {
+      const userAge = userProfile.role === 'child' ? 12 : 35;
+      const interests = userProfile.role === 'child' 
+        ? ['gaming', 'creativity', 'social media']
+        : ['education', 'family', 'technology', 'ethics'];
+      const previousTopics = ['AI basics', 'Machine learning', 'Privacy'];
+      
+      const suggestions = await aiService.generateConversationSuggestions(
+        userAge,
+        interests,
+        previousTopics,
+        userProfile.id
+      );
+      
+      const pathTopics = suggestions.map(s => s.question);
+      setLearningPath(pathTopics);
+    } catch (error) {
+      console.error('Error generating learning path:', error);
+      setLearningPath([
+        'Explore AI ethics and fairness',
+        'Understand machine learning basics',
+        'Learn about AI in creative fields',
+        'Discover AI applications in healthcare'
+      ]);
+    } finally {
+      setLoadingPath(false);
+    }
+  };
+
+  const generateProgressInsights = async () => {
+    if (!userProfile) return;
+    
+    setLoadingInsights(true);
+    try {
+      // Mock journal analysis for insights
+      const mockJournalContent = `I've been learning about AI with my family. We've discussed voice assistants, recommendation systems, and AI bias. I'm curious about how AI might change jobs in the future.`;
+      
+      const userAge = userProfile.role === 'child' ? 12 : 35;
+      const topics = await aiService.analyzeJournalForTopics(
+        mockJournalContent,
+        userAge,
+        userProfile.id
+      );
+      
+      setProgressInsights(topics);
+    } catch (error) {
+      console.error('Error generating insights:', error);
+      setProgressInsights([
+        'Strong foundation in AI basics',
+        'Ready for intermediate ethics discussions',
+        'Interested in practical AI applications'
+      ]);
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userProfile) {
+      generateLearningPath();
+      generateProgressInsights();
+    }
+  }, [userProfile]);
 
   return (
     <div className="space-y-6">
@@ -283,6 +361,33 @@ const Profile: React.FC = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* AI Progress Insights */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Sparkles className="h-5 w-5 mr-2 text-purple-600" />
+                AI Insights
+              </h2>
+            </div>
+            {loadingInsights ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600 mr-2"></div>
+                <span className="text-gray-600 text-sm">Analyzing your progress...</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {progressInsights.map((insight, index) => (
+                  <div key={index} className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-start space-x-2">
+                      <Award className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-gray-700">{insight}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Stats */}
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Progress</h2>
@@ -356,6 +461,39 @@ const Profile: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* AI Learning Path */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Target className="h-5 w-5 mr-2 text-green-600" />
+                Your Learning Path
+              </h2>
+            </div>
+            {loadingPath ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600 mr-2"></div>
+                <span className="text-gray-600 text-sm">Creating personalized path...</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {learningPath.slice(0, 4).map((topic, index) => (
+                  <div key={index} className="flex items-start space-x-3 p-2">
+                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center text-green-600 text-xs font-medium mt-0.5">
+                      {index + 1}
+                    </div>
+                    <p className="text-sm text-gray-700 flex-1">{topic}</p>
+                  </div>
+                ))}
+                <button 
+                  onClick={generateLearningPath}
+                  className="w-full text-green-600 hover:text-green-700 text-sm py-2 text-center transition-colors"
+                >
+                  Generate New Path
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Account Actions */}

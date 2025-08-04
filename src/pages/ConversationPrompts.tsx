@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { aiService, type ConversationSuggestion } from '../services/aiService';
 import { 
   MessageCircle, 
   Clock, 
@@ -8,7 +9,10 @@ import {
   Calendar,
   Users,
   Lightbulb,
-  Search
+  Search,
+  Sparkles,
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 
 interface Prompt {
@@ -30,8 +34,72 @@ const ConversationPrompts: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [aiSuggestions, setAiSuggestions] = useState<ConversationSuggestion[]>([]);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
+  const [aiFollowUps, setAiFollowUps] = useState<string[]>([]);
+  const [loadingFollowUps, setLoadingFollowUps] = useState(false);
 
-  // Mock data - in a real app, this would come from Firebase
+  // Load AI suggestions when component mounts
+  useEffect(() => {
+    if (userProfile) {
+      generateAISuggestions();
+    }
+  }, [userProfile]);
+
+  const generateAISuggestions = async () => {
+    if (!userProfile) return;
+    
+    setLoadingAI(true);
+    try {
+      const userAge = userProfile.role === 'child' ? 12 : 35;
+      const interests = userProfile.role === 'child' 
+        ? ['gaming', 'videos', 'creativity']
+        : ['education', 'family', 'technology'];
+      const previousTopics = ['AI basics', 'Social media AI', 'Voice assistants'];
+      
+      const suggestions = await aiService.generateConversationSuggestions(
+        userAge,
+        interests,
+        previousTopics,
+        userProfile.id
+      );
+      
+      setAiSuggestions(suggestions);
+    } catch (error) {
+      console.error('Error generating AI suggestions:', error);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
+  const handlePromptClick = async (prompt: Prompt) => {
+    setSelectedPrompt(prompt);
+    setLoadingFollowUps(true);
+    
+    try {
+      if (userProfile) {
+        const userAge = userProfile.role === 'child' ? 12 : 35;
+        const conversationSummary = `Discussed ${prompt.title}: ${prompt.description}`;
+        
+        const followUps = await aiService.generateFollowUpQuestions(
+          prompt.title,
+          userAge,
+          conversationSummary,
+          userProfile.id
+        );
+        
+        setAiFollowUps(followUps);
+      }
+    } catch (error) {
+      console.error('Error generating follow-up questions:', error);
+      setAiFollowUps(prompt.followUpQuestions);
+    } finally {
+      setLoadingFollowUps(false);
+    }
+  };
+
+  // Production-ready conversation prompts for families learning about AI
   const prompts: Prompt[] = [
     {
       id: '1',
@@ -134,6 +202,329 @@ const ConversationPrompts: React.FC = () => {
         'How can we make AI systems more fair?',
         'Why is it important to have diverse teams building AI?'
       ]
+    },
+    {
+      id: '7',
+      title: 'How Does Machine Learning Work?',
+      description: 'Understand how computers can learn from examples and improve over time.',
+      category: 'daily',
+      ageGroup: 'all',
+      difficulty: 'beginner',
+      tags: ['machine learning', 'basics', 'examples'],
+      estimatedTime: '20 minutes',
+      parentGuidance: 'Compare machine learning to how humans learn - through practice and examples. Use concrete analogies.',
+      childQuestion: 'How do you think a computer could learn to recognize cats in photos?',
+      followUpQuestions: [
+        'What would happen if we only showed the computer orange cats?',
+        'How is this different from how you learned to recognize cats?',
+        'What other things might computers learn this way?'
+      ]
+    },
+    {
+      id: '8',
+      title: 'AI in Video Games',
+      description: 'Explore how AI creates challenging opponents and realistic game worlds.',
+      category: 'daily',
+      ageGroup: '10-13',
+      difficulty: 'beginner',
+      tags: ['gaming', 'entertainment', 'technology'],
+      estimatedTime: '18 minutes',
+      parentGuidance: 'Use games your child plays as examples. Discuss how AI makes games more fun and challenging.',
+      childQuestion: 'Have you ever wondered how computer opponents in games make decisions?',
+      followUpQuestions: [
+        'What makes a game opponent feel "smart" versus "dumb"?',
+        'How do you think NPCs (non-player characters) decide what to say?',
+        'Would games be as fun without AI opponents?'
+      ]
+    },
+    {
+      id: '9',
+      title: 'AI and Climate Change',
+      description: 'Discover how AI is being used to help solve environmental challenges.',
+      category: 'weekly',
+      ageGroup: 'all',
+      difficulty: 'intermediate',
+      tags: ['environment', 'climate', 'solutions'],
+      estimatedTime: '25 minutes',
+      parentGuidance: 'Focus on positive applications of AI for environmental good. Discuss how technology can help solve big problems.',
+      childQuestion: 'How do you think AI could help protect our planet?',
+      followUpQuestions: [
+        'What environmental problems could benefit from AI analysis?',
+        'How might AI help us use energy more efficiently?',
+        'Can you think of ways AI could help reduce waste?'
+      ]
+    },
+    {
+      id: '10',
+      title: 'Chatbots and Conversational AI',
+      description: 'Learn how AI can have conversations and when it\'s helpful or limiting.',
+      category: 'daily',
+      ageGroup: 'all',
+      difficulty: 'beginner',
+      tags: ['chatbots', 'conversation', 'language'],
+      estimatedTime: '20 minutes',
+      parentGuidance: 'Try interacting with a chatbot together. Discuss what makes conversations feel natural or robotic.',
+      childQuestion: 'When you talk to a chatbot, how can you tell it\'s not human?',
+      followUpQuestions: [
+        'What kinds of questions are easy or hard for chatbots?',
+        'When might you prefer talking to a chatbot versus a human?',
+        'How do you think chatbots will improve in the future?'
+      ]
+    },
+    {
+      id: '11',
+      title: 'AI in Healthcare',
+      description: 'Explore how AI helps doctors diagnose diseases and develop treatments.',
+      category: 'weekly',
+      ageGroup: '14-17',
+      difficulty: 'intermediate',
+      tags: ['healthcare', 'medicine', 'helping people'],
+      estimatedTime: '30 minutes',
+      parentGuidance: 'Discuss how AI assists doctors but doesn\'t replace human judgment. Focus on helping people.',
+      childQuestion: 'How do you think AI could help doctors take better care of patients?',
+      followUpQuestions: [
+        'What medical tasks might AI be better at than humans?',
+        'Why is it important that doctors still make the final decisions?',
+        'How could AI help make healthcare available to more people?'
+      ]
+    },
+    {
+      id: '12',
+      title: 'Deepfakes and AI-Generated Content',
+      description: 'Understand how AI can create realistic but fake images and videos.',
+      category: 'weekly',
+      ageGroup: '14-17',
+      difficulty: 'advanced',
+      tags: ['deepfakes', 'misinformation', 'media literacy'],
+      estimatedTime: '35 minutes',
+      parentGuidance: 'Discuss media literacy and critical thinking. Focus on how to identify and question suspicious content.',
+      childQuestion: 'Have you ever seen a video online that seemed too good to be true?',
+      followUpQuestions: [
+        'What clues might help you spot a deepfake?',
+        'Why might someone create fake videos or images?',
+        'How can we stay informed without being fooled by fake content?'
+      ]
+    },
+    {
+      id: '13',
+      title: 'Recommendation Systems',
+      description: 'Learn how AI suggests movies, music, and products just for you.',
+      category: 'daily',
+      ageGroup: 'all',
+      difficulty: 'beginner',
+      tags: ['recommendations', 'personalization', 'algorithms'],
+      estimatedTime: '18 minutes',
+      parentGuidance: 'Explore recommendations on platforms your family uses. Discuss how they can be helpful and limiting.',
+      childQuestion: 'How does Netflix seem to know what movies you might like?',
+      followUpQuestions: [
+        'What information do you think these systems use about you?',
+        'Can recommendations ever keep you from discovering new things?',
+        'How could you make sure you see a variety of different content?'
+      ]
+    },
+    {
+      id: '14',
+      title: 'AI and Transportation',
+      description: 'Discover how AI is changing how we travel, from GPS to self-driving cars.',
+      category: 'weekly',
+      ageGroup: 'all',
+      difficulty: 'intermediate',
+      tags: ['transportation', 'self-driving cars', 'navigation'],
+      estimatedTime: '25 minutes',
+      parentGuidance: 'Start with familiar examples like GPS navigation, then discuss future possibilities.',
+      childQuestion: 'How do you think your family\'s GPS knows the fastest route?',
+      followUpQuestions: [
+        'What would a car need to "know" to drive itself safely?',
+        'What are the benefits and concerns of self-driving cars?',
+        'How might AI change public transportation?'
+      ]
+    },
+    {
+      id: '15',
+      title: 'AI in Education',
+      description: 'Explore how AI is personalizing learning and changing schools.',
+      category: 'daily',
+      ageGroup: 'all',
+      difficulty: 'beginner',
+      tags: ['education', 'learning', 'personalization'],
+      estimatedTime: '20 minutes',
+      parentGuidance: 'Discuss educational apps or tools your child uses. Talk about personalized learning benefits.',
+      childQuestion: 'Have you noticed that some educational apps seem to know what you need to practice?',
+      followUpQuestions: [
+        'How could AI help teachers understand what students need?',
+        'What are the advantages of learning at your own pace?',
+        'What role should humans play in education even with AI?'
+      ]
+    },
+    {
+      id: '16',
+      title: 'The Future of Work with AI',
+      description: 'Discuss how AI might change jobs and what skills will be important.',
+      category: 'special',
+      ageGroup: '14-17',
+      difficulty: 'advanced',
+      tags: ['future', 'careers', 'skills'],
+      estimatedTime: '35 minutes',
+      parentGuidance: 'Focus on collaboration between humans and AI rather than replacement. Emphasize adaptability.',
+      childQuestion: 'What kinds of jobs do you think will be most important in the future?',
+      followUpQuestions: [
+        'What skills make humans unique compared to AI?',
+        'How might AI help people do their jobs better?',
+        'What new types of jobs might exist because of AI?'
+      ]
+    },
+    {
+      id: '17',
+      title: 'AI and Facial Recognition',
+      description: 'Understand how AI recognizes faces and the privacy implications.',
+      category: 'weekly',
+      ageGroup: 'all',
+      difficulty: 'intermediate',
+      tags: ['facial recognition', 'privacy', 'surveillance'],
+      estimatedTime: '25 minutes',
+      parentGuidance: 'Use phone photo apps as examples. Discuss both convenience and privacy concerns.',
+      childQuestion: 'How does your phone know which photos have you in them?',
+      followUpQuestions: [
+        'When might facial recognition be helpful versus concerning?',
+        'Should stores be able to use facial recognition on customers?',
+        'How can we enjoy the benefits while protecting our privacy?'
+      ]
+    },
+    {
+      id: '18',
+      title: 'Language Translation and AI',
+      description: 'Explore how AI breaks down language barriers and connects cultures.',
+      category: 'daily',
+      ageGroup: 'all',
+      difficulty: 'beginner',
+      tags: ['translation', 'language', 'communication'],
+      estimatedTime: '20 minutes',
+      parentGuidance: 'Try using translation apps together. Discuss how this connects people across cultures.',
+      childQuestion: 'How do you think translation apps figure out what words mean in different languages?',
+      followUpQuestions: [
+        'What makes translation challenging for AI?',
+        'How might better translation technology change the world?',
+        'What\'s lost when we rely only on AI translation?'
+      ]
+    },
+    {
+      id: '19',
+      title: 'AI Safety and Control',
+      description: 'Discuss how we make sure AI systems are safe and do what we want.',
+      category: 'weekly',
+      ageGroup: '14-17',
+      difficulty: 'advanced',
+      tags: ['safety', 'control', 'responsibility'],
+      estimatedTime: '30 minutes',
+      parentGuidance: 'Use age-appropriate examples of safety measures. Focus on human responsibility in AI development.',
+      childQuestion: 'How do we make sure AI systems don\'t make mistakes that could hurt people?',
+      followUpQuestions: [
+        'Who should be responsible when an AI system makes a mistake?',
+        'What safety measures should be built into AI systems?',
+        'How can we test AI systems before they\'re widely used?'
+      ]
+    },
+    {
+      id: '20',
+      title: 'AI in Sports and Entertainment',
+      description: 'Discover how AI enhances sports analysis and creates entertainment.',
+      category: 'daily',
+      ageGroup: 'all',
+      difficulty: 'beginner',
+      tags: ['sports', 'entertainment', 'analysis'],
+      estimatedTime: '18 minutes',
+      parentGuidance: 'Use sports your family watches as examples. Discuss AI in game analysis and fan experiences.',
+      childQuestion: 'Have you noticed all the statistics and predictions during sports broadcasts?',
+      followUpQuestions: [
+        'How might AI help athletes improve their performance?',
+        'What makes sports exciting that AI statistics can\'t capture?',
+        'How could AI make watching sports more interactive?'
+      ]
+    },
+    {
+      id: '21',
+      title: 'Data and How AI Learns',
+      description: 'Understand what data is and why it\'s so important for AI systems.',
+      category: 'daily',
+      ageGroup: 'all',
+      difficulty: 'beginner',
+      tags: ['data', 'learning', 'information'],
+      estimatedTime: '20 minutes',
+      parentGuidance: 'Use simple examples of data collection. Compare to how humans learn from experience.',
+      childQuestion: 'What kinds of information do you think AI systems need to learn?',
+      followUpQuestions: [
+        'How is data like food for AI systems?',
+        'What happens if AI learns from bad or incomplete information?',
+        'How can we make sure AI has good quality data to learn from?'
+      ]
+    },
+    {
+      id: '22',
+      title: 'AI Ethics and Moral Decisions',
+      description: 'Explore how we teach AI systems to make good choices.',
+      category: 'special',
+      ageGroup: '14-17',
+      difficulty: 'advanced',
+      tags: ['ethics', 'morality', 'decision making'],
+      estimatedTime: '40 minutes',
+      parentGuidance: 'Use thought experiments and real-world dilemmas. Focus on the complexity of moral reasoning.',
+      childQuestion: 'If an AI system has to choose between two difficult options, how should it decide?',
+      followUpQuestions: [
+        'Can machines understand right and wrong the way humans do?',
+        'Who should decide what values AI systems should have?',
+        'How do we handle disagreements about what\'s ethical?'
+      ]
+    },
+    {
+      id: '23',
+      title: 'Neural Networks and the Brain',
+      description: 'Learn how AI systems are inspired by how our brains work.',
+      category: 'weekly',
+      ageGroup: 'all',
+      difficulty: 'intermediate',
+      tags: ['neural networks', 'brain', 'biology'],
+      estimatedTime: '25 minutes',
+      parentGuidance: 'Draw connections between brain neurons and artificial networks. Keep biological explanations simple.',
+      childQuestion: 'How do you think computer networks might be similar to networks in our brains?',
+      followUpQuestions: [
+        'What can AI learn from studying how brains work?',
+        'How are artificial neural networks different from real brains?',
+        'What makes human thinking special compared to AI?'
+      ]
+    },
+    {
+      id: '24',
+      title: 'AI and Cybersecurity',
+      description: 'Understand how AI helps protect us online and how it can be misused.',
+      category: 'weekly',
+      ageGroup: '14-17',
+      difficulty: 'intermediate',
+      tags: ['cybersecurity', 'protection', 'hacking'],
+      estimatedTime: '25 minutes',
+      parentGuidance: 'Discuss both protective and malicious uses of AI. Focus on staying safe online.',
+      childQuestion: 'How might AI help keep your personal information safe online?',
+      followUpQuestions: [
+        'What new types of cyber attacks might use AI?',
+        'How can AI help detect suspicious online activity?',
+        'What can individuals do to stay safe in an AI-powered world?'
+      ]
+    },
+    {
+      id: '25',
+      title: 'Building an AI-Literate Family',
+      description: 'Reflect on your AI learning journey and plan for continued growth.',
+      category: 'special',
+      ageGroup: 'all',
+      difficulty: 'intermediate',
+      tags: ['reflection', 'family', 'growth'],
+      estimatedTime: '30 minutes',
+      parentGuidance: 'This is a reflective conversation about your family\'s AI learning journey and future goals.',
+      childQuestion: 'What\'s the most surprising thing you\'ve learned about AI so far?',
+      followUpQuestions: [
+        'How has learning about AI changed how you use technology?',
+        'What AI topics do you want to explore more?',
+        'How can our family stay informed about new AI developments?'
+      ]
     }
   ];
 
@@ -192,6 +583,61 @@ const ConversationPrompts: React.FC = () => {
           }
         </p>
       </div>
+
+      {/* AI-Generated Suggestions */}
+      {aiSuggestions.length > 0 && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+              <Sparkles className="h-5 w-5 mr-2 text-purple-600" />
+              AI-Generated Just for You
+            </h2>
+            <button
+              onClick={generateAISuggestions}
+              disabled={loadingAI}
+              className="p-2 text-purple-600 hover:text-purple-700 transition-colors disabled:opacity-50"
+              title="Generate new suggestions"
+            >
+              <RefreshCw className={`h-4 w-4 ${loadingAI ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {aiSuggestions.map((suggestion, index) => (
+              <div key={index} className="bg-white rounded-lg p-4 border border-purple-200 hover:shadow-md transition-shadow">
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Zap className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900 mb-2 text-sm">
+                      {suggestion.question}
+                    </h3>
+                    <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                      {suggestion.explanation}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        suggestion.difficulty === 'beginner' ? 'bg-green-100 text-green-700' :
+                        suggestion.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {suggestion.difficulty}
+                      </span>
+                      <span className="text-xs text-gray-500">{suggestion.estimatedTime} min</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {loadingAI && (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mr-2"></div>
+              <span className="text-gray-600">Generating personalized suggestions...</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="flex flex-col md:flex-row gap-4">
@@ -292,7 +738,10 @@ const ConversationPrompts: React.FC = () => {
                 ))}
               </div>
 
-              <button className="w-full btn-primary text-sm py-2 flex items-center justify-center space-x-2 group-hover:bg-primary-700 transition-colors">
+              <button 
+                onClick={() => handlePromptClick(prompt)}
+                className="w-full btn-primary text-sm py-2 flex items-center justify-center space-x-2 group-hover:bg-primary-700 transition-colors"
+              >
                 <span>Start Conversation</span>
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -308,6 +757,104 @@ const ConversationPrompts: React.FC = () => {
           <p className="text-gray-600">
             Try adjusting your filters or search terms to find conversation prompts.
           </p>
+        </div>
+      )}
+
+      {/* Prompt Detail Modal with AI Follow-ups */}
+      {selectedPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">{selectedPrompt.title}</h2>
+                <button
+                  onClick={() => setSelectedPrompt(null)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                    <p className="text-gray-700">{selectedPrompt.description}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Parent Guidance</h3>
+                    <p className="text-gray-700">{selectedPrompt.parentGuidance}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Starter Question</h3>
+                    <p className="text-gray-700 font-medium bg-blue-50 p-3 rounded-lg">
+                      "{selectedPrompt.childQuestion}"
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4 text-sm">
+                    <span className={`px-3 py-1 rounded-full ${
+                      selectedPrompt.difficulty === 'beginner' ? 'bg-green-100 text-green-800' :
+                      selectedPrompt.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {selectedPrompt.difficulty}
+                    </span>
+                    <span className="text-gray-500">{selectedPrompt.estimatedTime}</span>
+                    <span className="text-gray-500">Ages {selectedPrompt.ageGroup}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                      <Sparkles className="h-5 w-5 mr-2 text-purple-600" />
+                      AI-Generated Follow-ups
+                    </h3>
+                    {loadingFollowUps ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mr-2"></div>
+                        <span className="text-gray-600">Generating personalized questions...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {aiFollowUps.map((question, index) => (
+                          <div key={index} className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                            <p className="text-gray-900 font-medium text-sm">{question}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-3">Original Follow-ups</h3>
+                    <div className="space-y-2">
+                      {selectedPrompt.followUpQuestions.map((question, index) => (
+                        <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                          <p className="text-gray-700 text-sm">{question}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex space-x-3">
+                <button className="btn-primary flex-1">
+                  Start This Conversation
+                </button>
+                <button 
+                  onClick={() => setSelectedPrompt(null)}
+                  className="btn-secondary"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

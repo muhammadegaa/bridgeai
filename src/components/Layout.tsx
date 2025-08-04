@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import AIActivityIndicator from './AIActivityIndicator';
 import { 
   MessageCircle, 
   BookOpen, 
@@ -9,7 +10,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  Home
+  Home,
+  Sparkles
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -20,6 +22,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { userProfile, logout } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [aiActivity, setAiActivity] = useState(false);
+
+  // Listen for AI activity across the app
+  useEffect(() => {
+    const handleAIStart = () => setAiActivity(true);
+    const handleAIEnd = () => setAiActivity(false);
+    
+    // Custom events for AI activity
+    document.addEventListener('ai-request-start', handleAIStart);
+    document.addEventListener('ai-request-end', handleAIEnd);
+    
+    return () => {
+      document.removeEventListener('ai-request-start', handleAIStart);
+      document.removeEventListener('ai-request-end', handleAIEnd);
+    };
+  }, []);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -106,7 +124,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-4">
-              <h1 className="text-2xl font-bold text-primary-600">BridgeAI</h1>
+              <div className="flex items-center space-x-2">
+                <Sparkles className="h-6 w-6 text-primary-600" />
+                <h1 className="text-2xl font-bold text-primary-600">BridgeAI</h1>
+              </div>
             </div>
             <nav className="mt-5 flex-1 px-2 bg-white space-y-1">
               {navigation.map((item) => {
@@ -184,6 +205,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </main>
       </div>
+      
+      {/* AI Activity Indicator */}
+      <AIActivityIndicator isActive={aiActivity} />
     </div>
   );
 };
