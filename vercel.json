@@ -1,0 +1,24 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_FIREBASE_API_KEY": "@vite_firebase_api_key",
+    "VITE_FIREBASE_AUTH_DOMAIN": "@vite_firebase_auth_domain",
+    "VITE_FIREBASE_PROJECT_ID": "@vite_firebase_project_id",
+    "VITE_FIREBASE_STORAGE_BUCKET": "@vite_firebase_storage_bucket",
+    "VITE_FIREBASE_MESSAGING_SENDER_ID": "@vite_firebase_messaging_sender_id",
+    "VITE_FIREBASE_APP_ID": "@vite_firebase_app_id",
+    "VITE_FIREBASE_MEASUREMENT_ID": "@vite_firebase_measurement_id",
+    "VITE_OPENROUTER_API_KEY": "@vite_openrouter_api_key",
+    "VITE_OPENROUTER_API_URL": "https://openrouter.ai/api/v1",
+    "VITE_APP_NAME": "BridgeAI",
+    "VITE_APP_VERSION": "1.0.0"
+  }
+}
