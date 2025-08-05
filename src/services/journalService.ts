@@ -2,6 +2,7 @@ import {
   collection, 
   addDoc, 
   getDocs, 
+  getDoc,
   query, 
   where, 
   orderBy, 
@@ -138,10 +139,10 @@ export const journalService = {
       const entryRef = doc(db, 'journalEntries', entryId);
       
       // First, get the current entry to check likes
-      const entryDoc = await getDocs(query(collection(db, 'journalEntries'), where('__name__', '==', entryId)));
+      const entryDoc = await getDoc(entryRef);
       
-      if (!entryDoc.empty) {
-        const currentEntry = entryDoc.docs[0].data();
+      if (entryDoc.exists()) {
+        const currentEntry = entryDoc.data();
         const currentLikes = currentEntry.likes || [];
         
         let newLikes;

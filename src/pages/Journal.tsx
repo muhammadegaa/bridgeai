@@ -24,6 +24,7 @@ const Journal: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [newEntry, setNewEntry] = useState({
     title: '',
     content: '',
@@ -86,17 +87,21 @@ const Journal: React.FC = () => {
   });
 
   const handleCreateEntry = async () => {
-    if (!userProfile || !newEntry.title || !newEntry.content) return;
+    if (!userProfile || !newEntry.title.trim() || !newEntry.content.trim()) {
+      alert('Please fill in both title and content.');
+      return;
+    }
     
+    setCreating(true);
     try {
       const entryData = {
         userId: userProfile.id,
         userName: userProfile.displayName || 'User',
         userRole: userProfile.role || 'parent',
-        title: newEntry.title,
-        content: newEntry.content,
+        title: newEntry.title.trim(),
+        content: newEntry.content.trim(),
         isShared: newEntry.isShared,
-        tags: newEntry.tags
+        tags: newEntry.tags.filter(tag => tag.trim()) // Remove empty tags
       };
       
       await journalService.createEntry(entryData);
@@ -110,9 +115,14 @@ const Journal: React.FC = () => {
       
       // Reload entries
       await loadEntries();
+      
+      // Show success feedback
+      alert('Journal entry created successfully!');
     } catch (error) {
       console.error('Error creating journal entry:', error);
       alert('Failed to create journal entry. Please try again.');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -388,6 +398,22 @@ const Journal: React.FC = () => {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tags (optional)
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="Add tags separated by commas (e.g., AI, learning, fun)"
+                    value={newEntry.tags.join(', ')}
+                    onChange={(e) => {
+                      const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                      setNewEntry(prev => ({ ...prev, tags }));
+                    }}
+                  />
+                </div>
+
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -404,10 +430,10 @@ const Journal: React.FC = () => {
                 <div className="flex space-x-3 pt-4">
                   <button
                     onClick={handleCreateEntry}
-                    disabled={!newEntry.title || !newEntry.content}
+                    disabled={!newEntry.title || !newEntry.content || creating}
                     className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Publish Entry
+                    {creating ? 'Publishing...' : 'Publish Entry'}
                   </button>
                   <button
                     onClick={() => setShowNewEntryModal(false)}

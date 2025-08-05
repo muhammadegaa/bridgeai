@@ -10,6 +10,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import type { User } from '../types';
+import { userStatsService } from '../services/userStatsService';
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -53,6 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     await setDoc(doc(db, 'users', user.uid), userProfile);
     setUserProfile(userProfile);
+    
+    // Initialize user stats
+    await userStatsService.initializeUserStats(user.uid);
   }
 
   async function login(email: string, password: string) {

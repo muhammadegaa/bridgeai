@@ -1,33 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Search, BookOpen, Lightbulb, Users, Shield, Cpu, Brain } from 'lucide-react';
-
-interface AITerm {
-  id: string;
-  term: string;
-  simpleExplanation: string;
-  technicalExplanation: string;
-  examples: string[];
-  relatedTerms: string[];
-  category: 'basics' | 'ethics' | 'safety' | 'tools' | 'concepts';
-  parentNotes?: string;
-}
+import { aiService, type AITermExplanation } from '../services/aiService';
+import { Search, BookOpen, Lightbulb, Users, Shield, Cpu, Brain, Loader } from 'lucide-react';
 
 const AIGlossary: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedTerm, setSelectedTerm] = useState<AITerm | null>(null);
-
+  const [selectedTerm, setSelectedTerm] = useState<AITermExplanation | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const { userProfile } = useAuth();
-  const [aiTerms, setAiTerms] = useState<AITerm[]>([]);
-  const [loading] = useState(false);
-
-  // Real glossary will generate explanations on-demand using AI
-  // For now, show empty state to encourage real AI integration
-  useEffect(() => {
-    // TODO: Load frequently asked terms or generate starter terms based on user level
-    setAiTerms([]);
-  }, [userProfile]);
 
   const categories = [
     { id: 'all', name: 'All Terms', icon: BookOpen, color: 'text-gray-600' },
@@ -38,7 +21,48 @@ const AIGlossary: React.FC = () => {
     { id: 'safety', name: 'Safety', icon: Shield, color: 'text-red-600' },
   ];
 
-  // Removed filteredTerms since using AI search instead
+  const handleExplainTerm = async () => {
+    if (!searchTerm.trim() || !userProfile) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const explanation = await aiService.explainAITerm(
+        searchTerm.trim(),
+        userProfile.role,
+        userProfile.id
+      );
+      
+      setSelectedTerm(explanation);
+    } catch (err) {
+      console.error('Error explaining term:', err);
+      setError('Failed to explain this term. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchTerm.trim() && !loading) {
+      handleExplainTerm();
+    }
+  };
+
+  const commonTerms = [
+    'Artificial Intelligence',
+    'Machine Learning',
+    'Algorithm',
+    'Neural Network',
+    'Chatbot',
+    'Deep Learning',
+    'Natural Language Processing',
+    'Computer Vision',
+    'Data Mining',
+    'Robotics',
+    'Automation',
+    'Bias in AI'
+  ];
 
   const getCategoryColor = (category: string) => {
     const categoryObj = categories.find(cat => cat.id === category);
@@ -72,6 +96,7 @@ const AIGlossary: React.FC = () => {
               className="input-field pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleKeyPress}
             />
           </div>
         </div>
@@ -98,6 +123,19 @@ const AIGlossary: React.FC = () => {
         </div>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+          <button
+            onClick={handleExplainTerm}
+            className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* Interactive Search */}
       <div className="text-center py-12">
         <BookOpen className="h-12 w-12 text-primary-600 mx-auto mb-4" />
@@ -106,7 +144,7 @@ const AIGlossary: React.FC = () => {
           Type any AI or technology term you'd like explained in simple, family-friendly language.
         </p>
         
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto mb-6">
           <div className="flex">
             <input
               type="text"
@@ -114,29 +152,65 @@ const AIGlossary: React.FC = () => {
               className="input-field flex-1"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && searchTerm.trim()) {
-                  // TODO: Generate AI explanation for the term
-                  console.log('Would explain:', searchTerm);
-                }
-              }}
+              onKeyPress={handleKeyPress}
             />
             <button
-              onClick={() => {
-                if (searchTerm.trim()) {
-                  // TODO: Generate AI explanation for the term
-                  console.log('Would explain:', searchTerm);
-                }
-              }}
+              onClick={handleExplainTerm}
               disabled={!searchTerm.trim() || loading}
-              className="btn-primary ml-2 px-6 disabled:opacity-50"
+              className="btn-primary ml-2 px-6 disabled:opacity-50 flex items-center space-x-2"
             >
-              {loading ? 'Explaining...' : 'Explain'}
+              {loading ? (
+                <>
+                  <Loader className="h-4 w-4 animate-spin" />
+                  <span>Explaining...</span>
+                </>
+              ) : (
+                <span>Explain</span>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Common Terms */}
+        <div className="max-w-4xl mx-auto">
+          <p className="text-sm text-gray-500 mb-4">Or try one of these common terms:</p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {commonTerms.map((term) => (
+              <button
+                key={term}
+                onClick={async () => {
+                  setSearchTerm(term);
+                  // Auto-explain after setting the term
+                  if (userProfile) {
+                    try {
+                      setLoading(true);
+                      setError(null);
+                      
+                      const explanation = await aiService.explainAITerm(
+                        term,
+                        userProfile.role,
+                        userProfile.id
+                      );
+                      
+                      setSelectedTerm(explanation);
+                    } catch (err) {
+                      console.error('Error explaining term:', err);
+                      setError('Failed to explain this term. Please try again.');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }}
+                disabled={loading}
+                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-primary-100 hover:text-primary-700 transition-colors disabled:opacity-50"
+              >
+                {term}
+              </button>
+            ))}
+          </div>
+        </div>
         
-        <p className="text-xs text-gray-500 mt-3">
+        <p className="text-xs text-gray-500 mt-6">
           Our AI will provide age-appropriate explanations with examples and tips for parents.
         </p>
       </div>
@@ -144,7 +218,7 @@ const AIGlossary: React.FC = () => {
       {/* Term Detail Modal */}
       {selectedTerm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -163,67 +237,105 @@ const AIGlossary: React.FC = () => {
 
               <div className="space-y-6">
                 {/* Simple Explanation */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                    <Lightbulb className="h-5 w-5 mr-2 text-yellow-600" />
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-green-900 mb-2 flex items-center">
+                    <Lightbulb className="h-5 w-5 mr-2" />
                     Simple Explanation
                   </h3>
-                  <p className="text-gray-700">{selectedTerm.simpleExplanation}</p>
+                  <p className="text-green-800">{selectedTerm.simpleExplanation}</p>
                 </div>
 
                 {/* Technical Explanation */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                    <BookOpen className="h-5 w-5 mr-2 text-blue-600" />
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2 flex items-center">
+                    <BookOpen className="h-5 w-5 mr-2" />
                     More Details
                   </h3>
-                  <p className="text-gray-700">{selectedTerm.technicalExplanation}</p>
+                  <p className="text-blue-800">{selectedTerm.technicalExplanation}</p>
                 </div>
 
                 {/* Examples */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Examples</h3>
-                  <ul className="space-y-2">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Real-World Examples</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {selectedTerm.examples.map((example, index) => (
-                      <li key={index} className="flex items-start space-x-2">
-                        <span className="text-primary-600 mt-1">•</span>
-                        <span className="text-gray-700">{example}</span>
-                      </li>
+                      <div key={index} className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-gray-700 text-sm">{example}</p>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
 
                 {/* Parent Notes */}
                 {selectedTerm.parentNotes && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-2 flex items-center">
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-purple-900 mb-2 flex items-center">
                       <Users className="h-5 w-5 mr-2" />
                       Tips for Parents
                     </h3>
-                    <p className="text-blue-800">{selectedTerm.parentNotes}</p>
+                    <p className="text-purple-800">{selectedTerm.parentNotes}</p>
                   </div>
                 )}
 
                 {/* Related Terms */}
                 {selectedTerm.relatedTerms.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Related Terms</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Related Terms</h3>
                     <div className="flex flex-wrap gap-2">
-                      {selectedTerm.relatedTerms.map((relatedTerm, index) => {
-                        const related = aiTerms.find(t => t.term === relatedTerm);
-                        return (
-                          <button
-                            key={index}
-                            onClick={() => related && setSelectedTerm(related)}
-                            className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm hover:bg-primary-200 transition-colors"
-                          >
-                            {relatedTerm}
-                          </button>
-                        );
-                      })}
+                      {selectedTerm.relatedTerms.map((relatedTerm, index) => (
+                        <button
+                          key={index}
+                          onClick={async () => {
+                            setSearchTerm(relatedTerm);
+                            setSelectedTerm(null);
+                            // Auto-explain the related term
+                            if (userProfile) {
+                              try {
+                                setLoading(true);
+                                setError(null);
+                                
+                                const explanation = await aiService.explainAITerm(
+                                  relatedTerm,
+                                  userProfile.role,
+                                  userProfile.id
+                                );
+                                
+                                setSelectedTerm(explanation);
+                              } catch (err) {
+                                console.error('Error explaining term:', err);
+                                setError('Failed to explain this term. Please try again.');
+                              } finally {
+                                setLoading(false);
+                              }
+                            }
+                          }}
+                          className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm hover:bg-primary-200 transition-colors"
+                        >
+                          {relatedTerm}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedTerm(null);
+                    }}
+                    className="btn-primary flex-1"
+                  >
+                    Explain Another Term
+                  </button>
+                  <button
+                    onClick={() => setSelectedTerm(null)}
+                    className="btn-secondary"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -243,7 +355,7 @@ const AIGlossary: React.FC = () => {
             <li>• Use the examples to explain to your kids</li>
           </ul>
           <ul className="space-y-2">
-            <li>• Search the quick reference for common terms</li>
+            <li>• Click on related terms to explore further</li>
             <li>• Don't worry about perfect understanding</li>
             <li>• Focus on satisfying curiosity together</li>
           </ul>
